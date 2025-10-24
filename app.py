@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 import qrcode
 import qrcode.image.svg
+import xml.etree.ElementTree as ET
 
 app = Flask(__name__)
 
@@ -12,5 +13,7 @@ def generate_qr():
 
     factory = qrcode.image.svg.SvgImage
     img = qrcode.make(data, image_factory=factory)
-    svg_io = img.get_image()
-    return Response(svg_io.to_string(), mimetype="image/svg+xml")
+    svg_element = img.get_image()
+
+    svg_data = ET.tostring(svg_element, encoding="unicode")
+    return Response(svg_data, mimetype="image/svg+xml")
