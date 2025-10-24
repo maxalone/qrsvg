@@ -1,9 +1,11 @@
 from flask import Flask, request, Response
+from flask_cors import CORS
 import qrcode
 import qrcode.image.svg
 import xml.etree.ElementTree as ET
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/qr")
 def generate_qr():
