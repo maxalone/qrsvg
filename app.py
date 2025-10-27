@@ -5,18 +5,25 @@ import qrcode.image.svg
 import io
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://qrcoder.spaziogenesi.org"])
+
+ALLOWED_ORIGIN = "https://qrcoder.spaziogenesi.org"
+
+@app.before_request
+def restrict_origin():
+    origin = request.headers.get("Origin") or request.headers.get("Referer", "")
+    if not origin.startswith(ALLOWED_ORIGIN):
+        return "Forbidden", 403
 
 @app.route("/qr")
 def generate_qr():
     data = request.args.get("data", "")
-    fmt = request.args.get("format", "svg").lower()  # default svg
+    fmt = request.args.get("format", "svg").lower()
 
     if not data:
         return "Missing 'data' parameter", 400
 
     if fmt == "png":
-        # Genera QR in PNG
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -27,12 +34,10 @@ def generate_qr():
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Salva in buffer PNG
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         buf.seek(0)
 
-        # Restituisce immagine come file PNG
         return send_file(
             buf,
             mimetype="image/png",
@@ -41,7 +46,6 @@ def generate_qr():
         )
 
     elif fmt == "svg":
-        # Genera QR in SVG
         factory = qrcode.image.svg.SvgPathImage
         qr = qrcode.QRCode(
             version=1,
@@ -54,15 +58,13 @@ def generate_qr():
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Salva in buffer SVG
         stream = io.BytesIO()
         img.save(stream)
         svg_data = stream.getvalue().decode('utf-8')
 
         return Response(svg_data, mimetype="image/svg+xml")
 
-    else:
-        return "Invalid format. Use 'svg' or 'png'.", 400
+    return "Invalid format. Use 'svg' or 'png'.", 400
 
 
 if __name__ == "__main__":
